@@ -1,6 +1,8 @@
 import requests
 from PIL import Image
 from io import BytesIO
+from message import Message
+
 class RequestsApi:
     def __init__(self):
         self.geo_apikey = '40d1649f-0493-4b70-98ba-98533de7710b'
@@ -13,13 +15,13 @@ class RequestsApi:
         if forecast:
             req = 'https://api.openweathermap.org/data/2.5/forecast'
             params = {'lat': coord[0], 'lon': coord[1], 'appid': self.weather_apikey,
-                      'units': 'metric', 'cnt': time, 'lang': 'ru'}
+                      'units': 'metric', 'cnt': time * 8, 'lang': 'ru'}
             response = requests.get(req, params=params)
             if response:
                 json_response = response.json()
                 return json_response
             else:
-                return {'message': 'error'}
+                return {'error': response.status_code}
         else:
             req = 'https://api.openweathermap.org/data/2.5/weather'
             params = {'lat': coord[0], 'lon': coord[1], 'appid': self.weather_apikey, 'units': 'metric', 'lang': 'ru'}
@@ -28,20 +30,21 @@ class RequestsApi:
                 json_response = response.json()
                 return json_response
             else:
-                return {'message': 'error'}
+                return {'error': response.status_code}
 
     def get_weather_map(self, coord: tuple):
-        x, y = coord
+        """получает координаты места и возвращает его изображение на карте осадков"""
+        x, y = coord  # координаты плиток
         req = f'https://tile.openweathermap.org/map/precipitation_new/9/{x}/{y}.png?appid={self.weather_apikey}'
         response = requests.get(req)
         if response:
-            #  print(response.content)
             Image.open(BytesIO(
                 response.content)).show()
         else:
-            return {'message': 'error'}
+            return {'error': response.status_code}
 
     def get_geocoder(self, title: str) -> dict:
+        """возвращает координаты и полный адрес места, указанного в title"""
         req = 'https://geocode-maps.yandex.ru/1.x'
         params = {'apikey': self.geo_apikey, 'geocode': title, 'format': 'json'}
         response = requests.get(req, params=params)
@@ -53,11 +56,12 @@ class RequestsApi:
             toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
             # Координаты центра топонима:
             toponym_coodrinates = toponym["Point"]["pos"]
-            return {'address': toponym_address, 'coord': tuple(toponym_coodrinates.split())}
+            return {'address': toponym_address, 'coord': tuple(toponym_coodrinates.split())[::-1]}
         else:
-            return {'message': 'error'}
+            return {'error': response.status_code}
 
 
-'''requ = RequestsApi()
-
-requ.get_weather_map(('37', "55"))'''
+requ = RequestsApi()
+m = Message()
+coord = requ.get_geocoder('Барнаул')
+print(m.weather_forecast_message(requ.get_weather(coord['coord'], forecast=True, time=1)))
