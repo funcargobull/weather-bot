@@ -3,6 +3,7 @@ from PIL import Image
 from io import BytesIO
 from message import Message
 
+
 class RequestsApi:
     def __init__(self):
         self.geo_apikey = '40d1649f-0493-4b70-98ba-98533de7710b'
@@ -14,7 +15,7 @@ class RequestsApi:
         time - на сколько дней необходим прогноз (не более 5)"""
         if forecast:
             req = 'https://api.openweathermap.org/data/2.5/forecast'
-            params = {'lat': coord[0], 'lon': coord[1], 'appid': self.weather_apikey,
+            params = {'lat': coord[1], 'lon': coord[0], 'appid': self.weather_apikey,
                       'units': 'metric', 'cnt': time * 8, 'lang': 'ru'}
             response = requests.get(req, params=params)
             if response:
@@ -24,7 +25,7 @@ class RequestsApi:
                 return {'error': response.status_code}
         else:
             req = 'https://api.openweathermap.org/data/2.5/weather'
-            params = {'lat': coord[0], 'lon': coord[1], 'appid': self.weather_apikey, 'units': 'metric', 'lang': 'ru'}
+            params = {'lat': coord[1], 'lon': coord[0], 'appid': self.weather_apikey, 'units': 'metric', 'lang': 'ru'}
             response = requests.get(req, params=params)
             if response:
                 json_response = response.json()
@@ -38,8 +39,10 @@ class RequestsApi:
         req = f'https://tile.openweathermap.org/map/precipitation_new/9/{x}/{y}.png?appid={self.weather_apikey}'
         response = requests.get(req)
         if response:
-            Image.open(BytesIO(
-                response.content)).show()
+            pass
+            #  print(response.content)
+            #  print(BytesIO(response.content).read())
+            #  Image.open(BytesIO(response.content)).show()
         else:
             return {'error': response.status_code}
 
@@ -56,12 +59,13 @@ class RequestsApi:
             toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
             # Координаты центра топонима:
             toponym_coodrinates = toponym["Point"]["pos"]
-            return {'address': toponym_address, 'coord': tuple(toponym_coodrinates.split())[::-1]}
+            return {'address': toponym_address, 'coord': tuple(toponym_coodrinates.split())}
         else:
             return {'error': response.status_code}
 
 
-requ = RequestsApi()
+'''requ = RequestsApi()
 m = Message()
 coord = requ.get_geocoder('Барнаул')
-print(m.weather_forecast_message(requ.get_weather(coord['coord'], forecast=True, time=1)))
+print(requ.get_weather_map((22, 22)))
+print(m.weather_forecast_message(requ.get_weather(coord['coord'], forecast=True, time=1)))'''
