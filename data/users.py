@@ -10,5 +10,6 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
     tg_id = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    place = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    city = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # название города
+    current_city = sqlalchemy.Column(sqlalchemy.String, nullable=True)  # название текущего города
     time_repeat = sqlalchemy.Column(sqlalchemy.String, nullable=True)

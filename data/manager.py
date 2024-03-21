@@ -41,7 +41,15 @@ class DBManager:
         self.session.query(Images).filter(Images.user_id == self.get_user().id).update({title: image})
         self.session.commit()
 
+    def get_city(self) -> str:
+        """возвращает название города, сохраненного пользователем"""
+        return self.get_user().city
+
+    def get_current_city(self) -> str:
+        """возвращает название места, для которого пользователь хочет получить погоду"""
+        return self.get_user().current_city
+
     def print_all(self):
         """функция для проверки работы бд (в продакшене ее не будет)"""
-        return [(i.id, i.tg_id, i.place) for i in self.session.query(User).all()], [(i.id, i.user_id, i.image01) for i
-                                                                                    in self.session.query(Images).all()]
+        return [(i.id, i.tg_id, i.city) for i in self.session.query(User).all()], [(i.id, i.user_id, i.image01) for i
+                                                                                   in self.session.query(Images).all()]
