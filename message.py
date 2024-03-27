@@ -1,10 +1,4 @@
 class Message:
-    def hello_message(self) -> str:
-        """возвращает приветственное сообщение"""
-        return '''Приветствуем вас в нашем Telegram-боте MeteorMate. 
-        Пожалуйста, укажите населенный пункт, в котором вы хотите узнать погоду. 
-        Он будет выбран как пункт по умолчанию. Сменить его можно будет в любой момент'''
-
     def wind_direction(self, deg: float or int) -> str:
         """переводит из метеорологических градусов в строку с названием ветра"""
         direction = ['Северный', 'Северо-восточный', 'Восточный', 'Юго-восточный', 'Южный', 'Юго-западный', 'Западный',
@@ -12,21 +6,28 @@ class Message:
         value = int(deg / 22.5 + 1) // 2
         return direction[value if value < 8 else 0]
 
-    def weater_message(self, weather: dict) -> str:
+    def weather_message(self, weather: dict) -> str:
         """возвращает сообщение с информацией о текущей погоде"""
-        return f'''Сейчас {weather['weather'][0]['description']}.
-Температура воздуха {weather['main']['temp']}, ощущается как {weather['main']['feels_like']}
-Атмосферное давление {weather['main']['pressure'] * 7.5} мм рт ст. 
-Влажность воздуха составляет {weather['main']['humidity']}%. Видимость {'не ограничена' if
-        weather['visibility'] == 10000 else str(weather['visibility']) + 'метров'}.
-Ветер {self.wind_direction(weather['wind']['deg'])} со скоростью {weather['wind']['speed']} м/с.'''
+        msg = f'''🌈 Сейчас <b>{weather['weather'][0]['description']}</b>.
+🌡 Температура воздуха <b>{int(weather['main']['temp'])}°C</b>, ощущается как <b>{int(weather['main']['feels_like'])}°C</b>
+🌫️ Атмосферное давление <b>{int(weather['main']['pressure'] * 0.75)}</b> мм рт.ст. 
+💨 Ветер <b>{self.wind_direction(weather['wind']['deg'])}</b> со скоростью <b>{weather['wind']['speed']} м/с.</b>
+💧 Влажность воздуха составляет <b>{weather['main']['humidity']}%</b>. '''
+        try:
+            msg += f"Видимость {'<b>не ограничена</b>' if weather['visibility'] == 10000 else str(weather['visibility']) + ' метров'}."
+        except KeyError:
+            pass
 
-    def weather_forecast_message(self, weather: dict) -> str:
+        return msg
+
+    def weather_forecast_message(self, weather: dict):
         """возвращает сообщение с информацией о прогнозе погоде"""
-        message = []
-        for w in weather['list']:
-            message.append(f'''{w['dt_txt']}
-Будет {w['weather'][0]['description']}.(стикер соответствующий) 
-Температура {w['main']['temp']}, ощущается как {w['main']['feels_like']}. 
-Влажность {w['main']['humidity']}%. Ветер {w['wind']['speed']} м/с.''')
-        return '\n\n'.join(message)
+        return weather
+
+    def weather_forecast_message_normalized(self, weather: dict, index: int) -> str:
+        w = weather[index]
+        return f'''
+Будет <b>{w['weather'][0]['description']}</b>.
+Температура <b>{int(w['main']['temp'])}°C</b>, ощущается как <b>{int(w['main']['feels_like'])}°C</b>.
+Влажность <b>{w['main']['humidity']}%</b>. Ветер <b>{w['wind']['speed']} м/с</b>.
+'''

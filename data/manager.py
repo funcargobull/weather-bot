@@ -49,6 +49,26 @@ class DBManager:
         """возвращает название места, для которого пользователь хочет получить погоду"""
         return self.get_user().current_city
 
+    def get_current_forecast(self) -> dict:
+        """возвращает текущий прогноз"""
+        return self.get_user().current_forecast
+
+    def get_current_index(self) -> int:
+        """возвращает текущий индекс прогноза"""
+        return self.get_user().current_index
+
+    def get_setting_period(self) -> bool:
+        """показывает, занимается ли сейчас пользователь настройкой периодического прогноза"""
+        return self.get_user().setting_period
+
+    def get_time_repeat(self) -> bool:
+        """возвращает периодичность погоды"""
+        return self.get_user().time_repeat
+
+    def get_job_id(self) -> str:
+        """возвращает id процесса"""
+        return self.get_user().job_id
+
     def print_all(self):
         """функция для проверки работы бд (в продакшене ее не будет)"""
         return [(i.id, i.tg_id, i.city) for i in self.session.query(User).all()], [(i.id, i.user_id, i.image01) for i

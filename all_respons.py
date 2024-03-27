@@ -33,39 +33,22 @@ class RequestsApi:
             else:
                 return {'error': response.status_code}
 
-    def get_weather_map(self, coord: tuple):
-        """получает координаты места и возвращает его изображение на карте осадков"""
-        x, y = coord  # координаты плиток
-        req = f'https://tile.openweathermap.org/map/precipitation_new/9/{x}/{y}.png?appid={self.weather_apikey}'
-        response = requests.get(req)
-        if response:
-            pass
-            #  print(response.content)
-            #  print(BytesIO(response.content).read())
-            #  Image.open(BytesIO(response.content)).show()
-        else:
-            return {'error': response.status_code}
-
     def get_geocoder(self, title: str) -> dict:
         """возвращает координаты и полный адрес места, указанного в title"""
-        req = 'https://geocode-maps.yandex.ru/1.x'
-        params = {'apikey': self.geo_apikey, 'geocode': title, 'format': 'json'}
-        response = requests.get(req, params=params)
-        if response:
-            json_response = response.json()
-            # Получаем топоним из ответа геокодера.
-            toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
-            # Полный адрес топонима:
-            toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
-            # Координаты центра топонима:
-            toponym_coodrinates = toponym["Point"]["pos"]
-            return {'address': toponym_address, 'coord': tuple(toponym_coodrinates.split())}
-        else:
-            return {'error': response.status_code}
-
-
-'''requ = RequestsApi()
-m = Message()
-coord = requ.get_geocoder('Барнаул')
-print(requ.get_weather_map((22, 22)))
-print(m.weather_forecast_message(requ.get_weather(coord['coord'], forecast=True, time=1)))'''
+        try:
+            req = 'https://geocode-maps.yandex.ru/1.x'
+            params = {'apikey': self.geo_apikey, 'geocode': title, 'format': 'json'}
+            response = requests.get(req, params=params)
+            if response:
+                json_response = response.json()
+                # Получаем топоним из ответа геокодера.
+                toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+                # Полный адрес топонима:
+                toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
+                # Координаты центра топонима:
+                toponym_coodrinates = toponym["Point"]["pos"]
+                return {'address': toponym_address, 'coord': tuple(toponym_coodrinates.split())}
+            else:
+                return {'error': response.status_code}
+        except IndexError:
+            pass
