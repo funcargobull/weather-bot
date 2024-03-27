@@ -12,10 +12,13 @@ def normal_form(word):
 def check_if_city(prompt, CITIES):
     s = [normal_form(w).translate(str.maketrans('', '', "!#$%&'()*+,./:;<=>?@[\]^_`{|}~")) for w in prompt.split()]
     word = " ".join(s)
-    if word + "\n" in CITIES or word in CITIES:
+    if word.lower() + "\n" in CITIES or word.lower() in CITIES:
         return True, word.title()
     for i in s:
-        if i + "\n" in CITIES or i in CITIES:
+        if i.lower() + "\n" in CITIES or i.lower() in CITIES:
+            return True, i.title()
+    for i in prompt.split():
+        if i.lower() + "\n" in CITIES or i.lower() in CITIES:
             return True, i.title()
     return False, 0
 
