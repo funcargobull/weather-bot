@@ -1,6 +1,6 @@
 from config import BOT_TOKEN
-from functions import check_if_city
-from telegram.ext import Application, ConversationHandler, MessageHandler, filters, CallbackQueryHandler, CommandHandler
+from functions import *
+from telegram.ext import Application, MessageHandler, filters, CallbackQueryHandler, CommandHandler
 from markups import *
 from data.manager import DBManager
 from message import Message
@@ -59,6 +59,40 @@ async def handle_text(update, context):
                 parse_mode="html")
 
 
+# Обработчик фото
+async def handle_photo(update, context):
+    if not DBManager(str(update.effective_user.id)).get_setting_period():
+        file = await context.bot.get_file(update.message.photo[-1].file_id)
+        url = file.file_path
+        result = ai_get_location(url)
+        if result is not None:
+            check = check_if_city(result, open("cities2.txt", encoding="utf-8").readlines())
+            if check[0]:
+                manager = DBManager(str(update.effective_user.id))
+                manager.put_user({"current_city": check[1]})
+                await update.message.reply_text(
+                    f"""
+🌆 Выбран населенный пункт: <b>{check[1]}</b>
+Что именно ты хочешь?
+                            """,
+                    parse_mode="HTML",
+                    reply_markup=markup_city
+                )
+            else:
+                await update.message.reply_text(
+                    f"""
+😭 Извините, но распознавание <b>не удалось</b>
+Добавить свой населенный пункт можно командой /add [название в <b>начальной форме</b>]
+                        """,
+                    parse_mode="HTML",
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton(text="⬅️ Вернуться", callback_data="main_menu")]])
+                )
+
+        else:
+            await update.message.reply_text("❌ Возникла непредвиденная ошибка!")
+
+
 # Добавление нового города пользователем в случае ошибки
 async def add(update, context):
     if context.args:
@@ -75,12 +109,14 @@ async def start(update, context):
     user = update.effective_user
     DBManager(str(update.effective_user.id)).put_user({"setting_period": False})
 
-    await update.message.reply_text(
+    await update.message.reply_animation(
+        animation="CgACAgIAAxkBAAICPWYEQYZ2tp5GSg6pabmnvJqaX9YoAAI9QgAC80gpSGjYntGtKMlINAQ", caption=
         f"""
 <b>👋 Привет, {user.mention_html()}!</b>
 Я бот, который показывает погоду (или прогноз) в Вашем населенном пункте.
 <b>🌎 Выбери опцию или просто попроси погоду для своего населенного пункта 🌎</b>
 Например, <i>Москва</i> или <i>покажи погоду в Москве</i>
+<b>🧠 Также можно отправить фотографию места, и бот распознает его и выведет погоду 🧠</b>
 <b>Для выключения периодического прогноза введи команду /cancel</b>
         """, parse_mode="HTML", reply_markup=markup_start
     )
@@ -94,7 +130,8 @@ async def period_forecast(context):
     m = Message()
     coord = requ.get_geocoder(city)
     # Формируем сообщение с прогнозом
-    msg = f"🌍 <b>Погода для населенного пункта {city}</b> 🌍\n\n" + m.weather_message(requ.get_weather(coord['coord']))
+    msg = m.weather_message(requ.get_weather(coord['coord']))
+    msg = f"🌍 <b>Погода для населенного пункта {city}</b> 🌍\n\n" + msg
     await context.bot.send_message(text=msg, chat_id=context.job.user_id, parse_mode="HTML")
 
 
@@ -137,9 +174,11 @@ async def callback_handler(update, context):
 Я бот, который показывает погоду (или прогноз) в Вашем населенном пункте.
 <b>🌎 Выбери опцию или просто попроси погоду для своего населенного пункта 🌎</b>
 Например, <i>Москва</i> или <i>покажи погоду в Москве</i>
+<b>🧠 Также можно отправить фотографию места, и бот распознает его и выведет погоду 🧠</b>
 <b>Для выключения периодического прогноза введи команду /cancel</b>
                 """, parse_mode="HTML", reply_markup=markup_start
         )
+    # Настройка периодического прогноза
     elif query.data == "period":
         if DBManager(str(update.effective_user.id)).get_city() is None:
             await query.edit_message_text(
@@ -164,6 +203,7 @@ async def callback_handler(update, context):
 """, reply_markup=markup_period,
                 parse_mode="html"
             )
+    # Если человек выбрал "каждые 3 часа"
     elif query.data == "every_3_hours":
         if DBManager(str(update.effective_user.id)).get_time_repeat() is None:
             manager = DBManager(str(update.effective_user.id))
@@ -183,10 +223,6 @@ async def callback_handler(update, context):
                 parse_mode="html", reply_markup=InlineKeyboardMarkup(
                     [[InlineKeyboardButton(text="🏠 Главное меню",
                                            callback_data="main_menu")]]))
-
-    # Поменять картинки
-    elif query.data == "change_images":
-        await query.edit_message_text("изменить картинки")
     # Прогноз погоды по дням
     elif query.data == "everyday_forecast":
         await query.edit_message_text(
@@ -220,6 +256,7 @@ async def callback_handler(update, context):
                                           reply_markup=InlineKeyboardMarkup(
                                               [[InlineKeyboardButton(text="⬅️ Вернуться",
                                                                      callback_data="back_to_city")]]))
+
         except (IndexError, TypeError) as e:
             await query.edit_message_text("⚠️ Такого населенного пункта не существует!", parse_mode="HTML")
     # Обработка прогноза по дням
@@ -327,6 +364,7 @@ async def callback_handler(update, context):
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     text_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text)
+    photo_handler = MessageHandler(filters.PHOTO, handle_photo)
     callback = CallbackQueryHandler(callback_handler)
 
     application.add_handler(CommandHandler("start", start))
@@ -334,6 +372,7 @@ def main():
     application.add_handler(CommandHandler("cancel", cancel))
     application.add_handler(callback)
     application.add_handler(text_handler)
+    application.add_handler(photo_handler)
 
     application.run_polling()
 

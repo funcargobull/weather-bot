@@ -4,10 +4,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 keyboard_start = [
     [InlineKeyboardButton(
         text="🌤️ Периодический прогноз", callback_data="period"
-    )],
-    [InlineKeyboardButton(
-        text="🖼️ Изменить картинки", callback_data="change_images"
-    )],
+    )]
 ]
 markup_start = InlineKeyboardMarkup(keyboard_start)
 

@@ -21,10 +21,11 @@ class Message:
         return msg
 
     def weather_forecast_message(self, weather: dict):
-        """возвращает сообщение с информацией о прогнозе погоде"""
+        """возвращает прогноз"""
         return weather
 
     def weather_forecast_message_normalized(self, weather: dict, index: int) -> str:
+        """возвращает сообщение с информацией о прогнозе погоды"""
         w = weather[index]
         return f'''
 Будет <b>{w['weather'][0]['description']}</b>.
