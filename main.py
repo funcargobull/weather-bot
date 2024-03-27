@@ -11,7 +11,9 @@ import datetime
 # Обработчик текста
 async def handle_text(update, context):
     if not DBManager(str(update.effective_user.id)).get_setting_period():
-        check = check_if_city(update.message.text, open("cities2.txt", encoding="utf-8").readlines())
+        f = open("cities2.txt", encoding="utf-8")
+        check = check_if_city(update.message.text, f.readlines())
+        f.close()
         if check[0]:
             manager = DBManager(str(update.effective_user.id))
             manager.put_user({"current_city": check[1]})
@@ -100,7 +102,7 @@ async def add(update, context):
         with open("cities2.txt", "a", encoding="utf-8") as f:
             f.write(f"\n{args}")
         await update.message.reply_text(
-            f"✅ Город успешно добавлен!"
+            f"✅ Населенный пункт успешно добавлен!"
         )
 
 
