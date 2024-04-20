@@ -1,6 +1,7 @@
 from config import BOT_TOKEN
 from functions import *
 from telegram.ext import Application, MessageHandler, filters, CallbackQueryHandler, CommandHandler
+from telegram.error import BadRequest
 from markups import *
 from data.manager import DBManager
 from message import Message
@@ -183,13 +184,22 @@ async def callback_handler(update, context):
     # Настройка периодического прогноза
     elif query.data == "period":
         if DBManager(str(update.effective_user.id)).get_city() is None:
-            await query.edit_message_text(
-                """
+            try:
+                await query.edit_message_text(
+                    """
 ⚠️ <b>Сначала выберите населенный пункт для периодического прогноза!</b>
 Чтобы это сделать, попросите погоду, а затем нажмите кнопку <b>"💡 Сделать город основным"</b>
-                """, parse_mode="html",
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")]]))
+""", parse_mode="html",
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")]]))
+            except BadRequest:
+                await update.effective_message.reply_text(
+                    """
+⚠️ <b>Сначала выберите населенный пункт для периодического прогноза!</b>
+Чтобы это сделать, попросите погоду, а затем нажмите кнопку <b>"💡 Сделать город основным"</b>
+""", parse_mode="html",
+                    reply_markup=InlineKeyboardMarkup(
+                        [[InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu")]]))
         else:
             city = DBManager(str(update.effective_user.id)).get_city()
             DBManager(str(update.effective_user.id)).put_user({"setting_period": True})
@@ -197,14 +207,24 @@ async def callback_handler(update, context):
             utcnow = datetime.datetime.utcnow()
             h_utc, m_utc = utcnow.hour, utcnow.minute
 
-            await query.edit_message_text(
-                f"""
+            try:
+                await query.edit_message_text(
+                    f"""
 🏘️ Город: <b>{city}</b>
 ⏳ Выберите периодичность на клавиатуре или напишите время в формате UTC <b>ЧЧ:ММ</b> для ежедневной отправки
 🕒 UTC время на данный момент: <b>{h_utc}:{m_utc}</b>
 """, reply_markup=markup_period,
-                parse_mode="html"
-            )
+                    parse_mode="html"
+                )
+            except BadRequest:
+                await update.effective_message.reply_text(
+                    f"""
+🏘️ Город: <b>{city}</b>
+⏳ Выберите периодичность на клавиатуре или напишите время в формате UTC <b>ЧЧ:ММ</b> для ежедневной отправки
+🕒 UTC время на данный момент: <b>{h_utc}:{m_utc}</b>
+""", reply_markup=markup_period,
+                    parse_mode="html"
+                )
     # Если человек выбрал "каждые 3 часа"
     elif query.data == "every_3_hours":
         if DBManager(str(update.effective_user.id)).get_time_repeat() is None:
